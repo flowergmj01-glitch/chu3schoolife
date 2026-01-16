@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Japanese High School Life Lesson (Final)</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700&family=Nunito+Sans:wght@400;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #f3e5f5;
+            --card-bg: #ffffff;
+            --shadow: rgba(74, 20, 140, 0.15);
+            --primary: #8e24aa;
+            --secondary: #7b1fa2;
+            --text-main: #4a148c;
+            --text-sub: #6a1b9a;
+            --accent: #d81b60;
+            
+            /* LINE Chat Colors */
+            --line-bg: #7289da;
+            --line-bubble-left: #ffffff;
+            --line-bubble-right: #8de055;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-color);
+            font-family: 'Nunito Sans', 'Noto Sans JP', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; overflow: hidden; user-select: none;
+        }
+
+        /* --- 投影片容器 --- */
+        #presentation-container {
+            width: 1280px; height: 720px;
+            position: relative;
+            background-color: var(--card-bg);
+            box-shadow: 0 15px 30px var(--shadow);
+            border-radius: 12px;
+            overflow: hidden;
+            user-select: text;
+        }
+
+        .slide {
+            width: 100%; height: 100%;
+            display: none;
+            padding: 30px 50px;
+            position: relative;
+            z-index: 1;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .slide.active { display: flex; }
+
+        /* --- 畫布與內容層 --- */
+        .drawing-canvas, .content-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        }
+        .drawing-canvas { z-index: 50; pointer-events: none; }
+        .content-layer { z-index: 51; pointer-events: none; }
+
+        /* 拖曳元素樣式 */
+        .draggable-text {
+            position: absolute; background: rgba(255, 255, 255, 0.9);
+            border: 1px dashed var(--primary); padding: 5px 10px;
+            color: var(--text-main); font-size: 24px; font-weight: bold;
+            pointer-events: auto; cursor: move; border-radius: 4px; z-index: 100;
+        }
+        .draggable-text:focus { outline: 2px solid var(--secondary); border-style: solid; cursor: text; }
+
+        .draggable-image {
+            position: absolute; width: 300px; height: auto;
+            resize: both; overflow: hidden;
+            border: 2px dashed var(--primary); cursor: move;
+            pointer-events: auto; z-index: 99;
+        }
+        .draggable-image img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; display: block; }
+        .draggable-image:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .draggable-image::after {
+            content: 'Double click to delete'; position: absolute; bottom: 0; left: 0;
+            font-size: 10px; background: rgba(0,0,0,0.5); color: white; width: 100%; text-align: center; display: none;
+        }
+        .draggable-image:hover::after { display: block; }
+
+        /* --- 排版樣式 --- */
+        h1, h2, h3 { font-family: 'Noto Serif JP', serif; color: var(--primary); margin: 0; }
+        h1 { font-size: 48px; margin-bottom: 15px; }
+        h2 { font-size: 32px; margin-bottom: 20px; border-bottom: 3px solid var(--secondary); padding-bottom: 10px; width: 100%; }
+        h3 { font-size: 22px; margin-bottom: 8px; color: var(--secondary); margin-top: 8px; }
+        p, li { color: var(--text-main); font-size: 18px; line-height: 1.6; margin-bottom: 6px; }
+
+        ruby { ruby-position: over; }
+        rt { font-size: 0.6em; color: var(--accent); font-weight: normal; }
+        .cn-trans { color: var(--text-sub); font-size: 16px; display: block; margin-top: -2px; margin-bottom: 10px; font-weight: normal; opacity: 0.85; font-family: "Noto Sans TC", sans-serif; }
+
+        .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; width: 100%; height: 100%; align-items: center; }
+        
+        .reading-box {
+            background: white; border: 2px solid #e1bee7; border-radius: 12px;
+            padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            max-height: 550px; overflow-y: auto;
+        }
+
+        .image-wrapper {
+            width: 100%; height: 100%; max-height: 400px;
+            border-radius: 12px; overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .image-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+
+        .grammar-item {
+            background: #fff; border-left: 5px solid var(--accent);
+            padding: 12px; margin-bottom: 10px; border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* LINE Style Chat */
+        .chat-container {
+            background-color: #7289da;
+            border-radius: 15px;
+            padding: 20px;
+            height: 480px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border: 4px solid #333;
+            width: 100%;
+            max-width: 550px;
+            margin: 0 auto;
+        }
+        .chat-bubble {
+            padding: 10px 16px;
+            border-radius: 18px;
+            max-width: 85%;
+            font-size: 18px;
+            position: relative;
+            line-height: 1.4;
+        }
+        .chat-left { align-self: flex-start; background-color: white; color: black; border-bottom-left-radius: 5px; }
+        .chat-right { align-self: flex-end; background-color: #8de055; color: black; border-bottom-right-radius: 5px; }
+        .chat-label { font-size: 12px; margin-bottom: 4px; color: white; }
+        .chat-left-wrapper .chat-label { text-align: left; margin-left: 5px; }
+        .chat-right-wrapper .chat-label { text-align: right; margin-right: 5px; }
+        .chat-left-wrapper, .chat-right-wrapper { display: flex; flex-direction: column; width: 100%; }
+
+        /* Sample Answer Toggle Styles */
+        .toggle-answer-btn {
+            background-color: var(--secondary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 5px;
+            transition: background 0.2s;
+            display: inline-block;
+        }
+        .toggle-answer-btn:hover { background-color: var(--primary); }
+        .sample-answer {
+            display: none; /* Initially Hidden */
+            background-color: #fce4ec;
+            padding: 10px;
+            border-radius: 8px;
+            color: #880e4f !important;
+            font-size: 18px;
+            margin-top: 5px;
+            border-left: 4px solid var(--accent);
+        }
+
+        /* Full BG Overlay */
+        .full-bg { background-size: cover; background-position: center; position: relative; }
+        .overlay { background-color: rgba(255,255,255,0.92); padding: 50px; border-radius: 10px; text-align: center; max-width: 900px; box-shadow: 0 10px 20px rgba(74, 20, 140, 0.2); }
+
+        /* Toolbar & Nav */
+        #toolbar {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: white; padding: 10px 20px; border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2); display: flex; gap: 15px;
+            z-index: 1000; align-items: center; user-select: none;
+        }
+        .tool-btn {
+            background: none; border: none; font-size: 20px; color: var(--text-main);
+            cursor: pointer; padding: 10px; border-radius: 50%; width: 45px; height: 45px;
+            display: flex; align-items: center; justify-content: center; transition: 0.2s;
+        }
+        .tool-btn:hover { background-color: #f3e5f5; }
+        .tool-btn.active { background-color: var(--primary); color: white; }
+        .divider { width: 1px; height: 30px; background: #ddd; }
+        #color-palette { display: flex; gap: 5px; }
+        .color-swatch { width: 25px; height: 25px; border-radius: 50%; cursor: pointer; border: 2px solid white; box-shadow: 0 0 0 1px #ddd; }
+        .color-swatch.active { transform: scale(1.2); box-shadow: 0 0 0 2px var(--primary); }
+        .nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: rgba(255,255,255,0.8); border: none; color: var(--primary);
+            font-size: 30px; width: 50px; height: 50px; border-radius: 50%;
+            cursor: pointer; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        #prev-btn { left: 20px; } #next-btn { right: 20px; }
+        .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        @media print {
+            body { background: none; display: block; height: auto; }
+            #toolbar, .nav-btn { display: none !important; }
+            #presentation-container { width: 100%; height: auto; box-shadow: none; }
+            .slide { display: flex !important; page-break-after: always; height: 100vh; border: 1px solid #ddd; }
+            .toggle-answer-btn { display: none; }
+            .sample-answer { display: block !important; } /* Show answers when printing */
+        }
+    </style>
+</head>
+<body>
+
+    <div id="presentation-container">
+        <!-- Navigation -->
+        <button id="prev-btn" class="nav-btn" onclick="changeSlide(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+        <button id="next-btn" class="nav-btn" onclick="changeSlide(1)"><i class="fa-solid fa-chevron-right"></i></button>
+
+        <!-- Cover -->
+        <div class="slide active full-bg" style="background-image: url('https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=2074&auto=format&fit=crop');">
+            <div class="overlay">
+                <h1>日本の<ruby>学校<rt>がっこう</rt></ruby><ruby>生活<rt>せいかつ</rt></ruby>と<ruby>友情<rt>ゆうじょう</rt></ruby></h1>
+                <h3 style="color: #4a148c;">～卒業、進学、そして人間関係～</h3>
+                <p style="margin-top:20px;">テーマ別・会話中心レッスン</p>
+                <div style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px;">
+                    <span class="cn-trans" style="font-size: 20px;">日本的學校生活與友情：畢業、升學與人際關係</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= THEME 1: 別々の高校 ================= -->
+        
+        <!-- Theme 1: Cover -->
+        <div class="slide">
+            <h2>テーマ 1：<ruby>別々<rt>べつべつ</rt></ruby>の<ruby>高校<rt>こうこう</rt></ruby>に行く<ruby>親友<rt>しんゆう</rt></ruby></h2>
+            <div class="two-column">
+                <div>
+                    <p style="font-size: 22px; font-weight: bold; color: var(--primary);">「<ruby>疎遠<rt>そえん</rt></ruby>にならないための<ruby>約束<rt>やくそく</rt></ruby>」</p>
+                    <span class="cn-trans">為了不變得疏遠而做的約定</span>
+                    
+                    <div style="margin-top: 20px; background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #eee;">
+                        <ul style="margin: 0; padding-left: 20px;">
+                            <li><strong>卒業シーズンの不安</strong><br><span class="cn-trans" style="font-size: 14px;">畢業季的不安</span></li>
+                            <li style="margin-top: 10px;"><strong>環境が変わっても友達？</strong><br><span class="cn-trans" style="font-size: 14px;">即使環境改變也還是朋友嗎？</span></li>
+                            <li style="margin-top: 10px;"><strong>SNSやLINEの役割</strong><br><span class="cn-trans" style="font-size: 14px;">SNS和LINE的角色</span></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="image-wrapper">
+                    <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=2064&auto=format&fit=crop" alt="Friends walking away">
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 1: Reading -->
+        <div class="slide">
+            <h2><i class="fa-solid fa-book-open"></i> 文化補充：<ruby>卒業<rt>そつぎょう</rt></ruby>と<ruby>友情<rt>ゆうじょう</rt></ruby></h2>
+            <div class="two-column">
+                <div class="reading-box">
+                    <p><ruby>中学校<rt>ちゅうがっこう</rt></ruby>を<ruby>卒業<rt>そつぎょう</rt></ruby>すると、多くの<ruby>生徒<rt>せいと</rt></ruby>は<ruby>別々<rt>べつべつ</rt></ruby>の高校に<ruby>進学<rt>しんがく</rt></ruby>します。</p>
+                    <span class="cn-trans">國中畢業後，許多學生會升學到不同的高中。</span>
+                    
+                    <p>クラスメートと<ruby>離<rt>はな</rt></ruby>れ<ruby>離<rt>ばな</rt></ruby>れになるのは<ruby>寂<rt>さび</rt></ruby>しいですが、今はLINEやインスタグラムがあるので、<ruby>連絡<rt>れんらく</rt></ruby>を<ruby>取<rt>と</rt></ruby>るのは<ruby>簡単<rt>かんたん</rt></ruby>です。</p>
+                    <span class="cn-trans">雖然和同學分開很寂寞，但現在有LINE和Instagram，聯絡變得很簡單。</span>
+
+                    <p>しかし、<ruby>部活<rt>ぶかつ</rt></ruby>や勉強で<ruby>忙<rt>いそが</rt></ruby>しくなると、<ruby>自然<rt>しぜん</rt></ruby>と<ruby>疎遠<rt>そえん</rt></ruby>になってしまうこともあります。</p>
+                    <span class="cn-trans">但是，一旦忙於社團或課業，也很可能會自然而然地變得疏遠。</span>
+
+                    <p>だからこそ、「月に一回は会おう！」などの<ruby>約束<rt>やくそく</rt></ruby>が<ruby>大切<rt>たいせつ</rt></ruby>になります。</p>
+                    <span class="cn-trans">正因如此，「一個月見一次吧！」這樣的約定變得很重要。</span>
+                </div>
+                <div class="image-wrapper">
+                    <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?q=80&w=2070&auto=format&fit=crop" alt="Looking at phone">
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 1: Vocab -->
+        <div class="slide">
+            <h2><i class="fa-solid fa-font"></i> 単語 (Vocabulary)</h2>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                <div class="grammar-item">
+                    <h3>1. <ruby>疎遠<rt>そえん</rt></ruby> (な)</h3>
+                    <p>疎遠になる：變得疏遠</p>
+                    <span class="cn-trans">例文：彼とは卒業してから疎遠になった。</span>
+                </div>
+                <div class="grammar-item">
+                    <h3>2. <ruby>離<rt>はな</rt></ruby>れ<ruby>離<rt>ばな</rt></ruby>れ</h3>
+                    <p>分散、各奔東西</p>
+                    <span class="cn-trans">例文：親友と離れ離れになるのは辛い。</span>
+                </div>
+                <div class="grammar-item">
+                    <h3>3. <ruby>進学<rt>しんがく</rt></ruby> (する)</h3>
+                    <p>升學</p>
+                    <span class="cn-trans">例文：妹は東京の大学に進学する予定だ。</span>
+                </div>
+                <div class="grammar-item">
+                    <h3>4. <ruby>約束<rt>やくそく</rt></ruby> (する)</h3>
+                    <p>約定</p>
+                    <span class="cn-trans">例文：ずっと友達でいると約束した。</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 1: Grammar 1 -->
+        <div class="slide">
+            <h2><i class="fa-solid fa-pen-nib"></i> 文法 1：～ておく (事前準備)</h2>
+            <div class="reading-box" style="font-size: 18px;">
+                <p><strong>意味：</strong> 事先做好某事 / 保持某種狀態</p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+                
+                <p><strong><ruby>接続<rt>せつぞく</rt></ruby>：</strong> 動詞て形 ＋ おく</p>
+                
+                <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <p>1. 卒業式の前に、みんなで写真を<strong>撮っておきました</strong>。</p>
+                    <span class="cn-trans">在畢業典禮之前，大家先拍好了照片。</span>
+                </div>
+
+                <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <p>2. 連絡先を<strong>交換しておこう</strong>。</p>
+                    <span class="cn-trans">我們先交換聯絡方式吧。</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 1: Grammar 2 -->
+        <div class="slide">
+            <h2><i class="fa-solid fa-pen-nib"></i> 文法 2：～ないように (目的)</h2>
+            <div class="reading-box" style="font-size: 18px;">
+                <p><strong>意味：</strong> 為了不要... / 以免...</p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+                
+                <p><strong><ruby>接続<rt>せつぞく</rt></ruby>：</strong> 動詞ない形 ＋ ように</p>
+                
+                <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <p>1. <ruby>関係<rt>かんけい</rt></ruby>が<ruby>自然消滅<rt>しぜんしょうめつ</rt></ruby>し<strong>ないように</strong>、たまに連絡します。</p>
+                    <span class="cn-trans">為了不讓關係自然消滅，偶爾會聯絡。</span>
+                </div>
+
+                <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <p>2. <ruby>忘<rt>わす</rt></ruby>れ<strong>ないように</strong>、メモしておきます。</p>
+                    <span class="cn-trans">為了不要忘記，先做個筆記。</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 1: Roleplay 1 -->
+        <div class="slide">
+            <h2><i class="fa-brands fa-line" style="color: #06c755;"></i> ロールプレイ 1: 約束する</h2>
+            <div class="two-column">
+                <div style="font-size: 18px;">
+                    <p><strong>状況：</strong> 違う高校に行く親友（A）に、これからのことを話します。</p>
+                    <p><strong>目標：</strong> 「疎遠にならないように」提案する。</p>
+                    <p style="margin-top: 20px; color: var(--secondary);"><strong>ヒント：</strong></p>
+                    <ul>
+                        <li>～ておこう (事先做好/保持狀態)</li>
+                        <li>月一回 (一個月一次)</li>
+                    </ul>
+                </div>
+                
+                <!-- Chat UI -->
+                <div class="chat-container">
+                    <div class="chat-left-wrapper">
+                        <span class="chat-label">親友 A</span>
+                        <div class="chat-bubble chat-left">
+                            もうすぐ卒業だね…。高校別々になるの、やっぱ寂しいな😭
+                        </div>
+                    </div>
+                    <div class="chat-right-wrapper">
+                        <span class="chat-label">あなた (Student)</span>
+                        <div class="chat-bubble chat-right">
+                            本当だね。でも、_____ように、連絡するよ！
+                        </div>
+                    </div>
+                    <div class="chat-left-wrapper">
+                        <span class="chat-label">親友 A</span>
+                        <div class="chat-bubble chat-left">
+                            うん！絶対だよ？<br>どのくらい会えるかな？
+                        </div>
+                    </div>
+                    <div class="chat-right-wrapper">
+                        <span class="chat-label">あなた (Student)</span>
+                        <div class="chat-bubble chat-right">
+                            例えば、_____に一回は、カフェで会おうよ！☕
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 1: Roleplay 2 -->
+        <div class="slide">
+            <h2><i class="fa-brands fa-line" style="color: #06c755;"></i> ロールプレイ 2: テスト期間の励まし</h2>
+            <div class="two-column">
+                <div style="font-size: 18px;">
+                    <p><strong>状況：</strong> 高校に入学して2ヶ月。テスト期間中で忙しい。</p>
+                    <p><strong>目標：</strong> 忙しい友達を気遣う。</p>
+                    <p style="margin-top: 20px; color: var(--secondary);"><strong>ヒント：</strong></p>
+                    <ul>
+                        <li>無理しないように (不要太勉強)</li>
+                        <li>終わったら (結束之後)</li>
+                    </ul>
+                </div>
+                
+                <div class="chat-container">
+                    <div class="chat-left-wrapper">
+                        <span class="chat-label">親友 A</span>
+                        <div class="chat-bubble chat-left">
+                            やばい、来週からテストだ💦<br>全然勉強してない…
+                        </div>
+                    </div>
+                    <div class="chat-right-wrapper">
+                        <span class="chat-label">あなた (Student)</span>
+                        <div class="chat-bubble chat-right">
+                            私もだよ〜😭<br>でも、体を壊さない_____ね。
+                        </div>
+                    </div>
+                    <div class="chat-left-wrapper">
+                        <span class="chat-label">親友 A</span>
+                        <div class="chat-bubble chat-left">
+                            ありがとう！<br>テストが終わったら、何したい？
+                        </div>
+                    </div>
+                    <div class="chat-right-wrapper">
+                        <span class="chat-label">あなた (Student)</span>
+                        <div class="chat-bubble chat-right">
+                            テストが終わったら、パーッと_____に行こう！🎤
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 1: Roleplay 3 -->
+        <div class="slide">
+            <h2><i class="fa-brands fa-line" style="color: #06c755;"></i> ロールプレイ 3: 久しぶりの再会計画</h2>
+            <div class="two-column">
+                <div style="font-size: 18px;">
+                    <p><strong>状況：</strong> 夏休みが近い。久しぶりに会う計画を立てる。</p>
+                    <p><strong>目標：</strong> 具体的な日程と場所を決める。</p>
+                    <p style="margin-top: 20px; color: var(--secondary);"><strong>ヒント：</strong></p>
+                    <ul>
+                        <li>空いてる (有空/沒事)</li>
+                        <li>予約しておく (事先預約)</li>
+                    </ul>
+                </div>
+                
+                <div class="chat-container">
+                    <div class="chat-right-wrapper">
+                        <span class="chat-label">あなた (Student)</span>
+                        <div class="chat-bubble chat-right">
+                            もうすぐ夏休みだね！🌞<br>いつ頃が_____？
+                        </div>
+                    </div>
+                    <div class="chat-left-wrapper">
+                        <span class="chat-label">親友 A</span>
+                        <div class="chat-bubble chat-left">
+                            8月の最初なら空いてるよ！<br>どこ行く？新しいカフェ？
+                        </div>
+                    </div>
+                    <div class="chat-right-wrapper">
+                        <span class="chat-label">あなた (Student)</span>
+                        <div class="chat-bubble chat-right">
+                            いいね！混むかもしれないから、私が_____ね。
+                        </div>
+                    </div>
+                    <div class="chat-left-wrapper">
+                        <span class="chat-label">親友 A</span>
+                        <div class="chat-bubble chat-left">
+                            さすが！助かる〜🙏<br>楽しみにしてる！
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 1: Discussion -->
+        <div class="slide">
+            <h2><i class="fa-solid fa-comments"></i> ディスカッション</h2>
+            <div class="reading-box" style="height: auto;">
+                <p><strong>Q1. 友達と「疎遠」になった経験はありますか？それはなぜですか？</strong></p>
+                <span class="cn-trans">你有和朋友變得疏遠的經驗嗎？為什麼呢？</span>
+                <button class="toggle-answer-btn" onclick="toggleAnswer(this)">回答例を表示</button>
+                <p class="sample-answer">例：学校が変わったから / 忙しくなったから / 共通の話題がなくなったから</p>
+                <hr>
+                
+                <p><strong>Q2. ずっと仲良くするために、どんなことをしますか？</strong></p>
+                <span class="cn-trans">為了能夠一直要好，你會做什麼呢？</span>
+                <button class="toggle-answer-btn" onclick="toggleAnswer(this)">回答例を表示</button>
+                <p class="sample-answer">例：誕生日にメッセージを送る / インスタでコメントする / 遊びに誘う</p>
+            </div>
+        </div>
+
+
+        <!-- ================= THEME 2: 塾友 vs 学友 ================= -->
+        
+        <!-- Theme 2: Cover -->
+        <div class="slide">
+            <h2>テーマ 2：<ruby>塾<rt>じゅく</rt></ruby>の友達 vs 学校の友達</h2>
+            <div class="two-column">
+                <div>
+                    <p style="font-size: 22px; font-weight: bold; color: var(--primary);">「キャラの<ruby>使<rt>つか</rt></ruby>い<ruby>分<rt>わ</rt></ruby>けあるある」</p>
+                    <span class="cn-trans">補習班朋友 vs 學校朋友：角色切換的常態</span>
+                    
+                    <div style="margin-top: 20px; background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #eee;">
+                        <ul style="margin: 0; padding-left: 20px;">
+                            <li><strong>学校では「明るいキャラ」？</strong><br><span class="cn-trans" style="font-size: 14px;">在學校是「開朗角色」？</span></li>
+                            <li style="margin-top: 10px;"><strong><ruby>本音<rt>ほんね</rt></ruby>が言えるのはどっち？</strong><br><span class="cn-trans" style="font-size: 14px;">哪邊能說真心話？</span></li>
+                            <li style="margin-top: 10px;"><strong>コミュニティによる性格の変化</strong><br><span class="cn-trans" style="font-size: 14px;">因社群而異的性格變化</span></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="image-wrapper">
+                    <img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=2070&auto=format&fit=crop" alt="Studying together">
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 2: Reading -->
+        <div class="slide">
+            <h2><i class="fa-solid fa-book-open"></i> 文化補充：キャラの使い分け</h2>
+            <div class="two-column">
+                <div class="reading-box">
+                    <p>日本の高校生は、場所によって自分の「キャラ（性格）」を<ruby>変<rt>か</rt></ruby>えることがよくあります。</p>
+                    <span class="cn-trans">日本的高中生經常會根據場所改變自己的「角色（個性）」。</span>
+
+                    <p>例えば、学校のクラスでは目立たないように静かにしていますが、<ruby>塾<rt>じゅく</rt></ruby>の友達とはアニメの話で<ruby>盛<rt>も</rt></ruby>り<ruby>上<rt>あ</rt></ruby>がる、というケースです。</p>
+                    <span class="cn-trans">例如，在學校班級裡為了不顯眼而保持安靜，但和補習班朋友卻能熱烈討論動漫。</span>
+
+                    <p>学校は「<ruby>建前<rt>たてまえ</rt></ruby>（パブリックな顔）」、塾は「<ruby>本音<rt>ほんね</rt></ruby>（プライベートな顔）」が出しやすい場所かもしれません。</p>
+                    <span class="cn-trans">學校也許是展現「場面話（公開面孔）」，而補習班是容易展現「真心話（私下面孔）」的地方。</span>
+
+                    <p>異なるコミュニティを持つことは、<ruby>精神的<rt>せいしんてき</rt></ruby>な<ruby>安定<rt>あんてい</rt></ruby>にもつながります。</p>
+                    <span class="cn-trans">擁有不同的社群，也有助於精神上的安定。</span>
+                </div>
+                <div class="image-wrapper">
+                    <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop" alt="Students chatting">
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 2: Vocab -->
+        <div class="slide">
+            <h2><i class="fa-solid fa-font"></i> 単語 (Vocabulary)</h2>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                <div class="grammar-item">
+                    <h3>1. <ruby>使<rt>つか</rt></ruby>い<ruby>分<rt>わ</rt></ruby>ける</h3>
+                    <p>分開使用、區別使用</p>
+                    <span class="cn-trans">例文：相手によって敬語を使い分ける。</span>
+                </div>
+                <div class="grammar-item">
+                    <h3>2. <ruby>本音<rt>ほんね</rt></ruby></h3>
+                    <p>真心話</p>
+                    <span class="cn-trans">対義語：建前 (たてまえ / 場面話)</span>
+                </div>
+                <div class="grammar-item">
+                    <h3>3. <ruby>盛<rt>も</rt></ruby>り<ruby>上<rt>あ</rt></ruby>がる</h3>
+                    <p>氣氛熱烈、High起來</p>
+                    <span class="cn-trans">例文：カラオケで盛り上がった。</span>
+                </div>
+                <div class="grammar-item">
+                    <h3>4. <ruby>居心地<rt>いごこち</rt></ruby>がいい</h3>
+                    <p>待著很舒服、自在</p>
+                    <span class="cn-trans">例文：塾の友達とは居心地がいい。</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 2: Grammar 1 -->
+        <div class="slide">
+            <h2><i class="fa-solid fa-pen-nib"></i> 文法 1：～に対して (対比)</h2>
+            <div class="reading-box" style="font-size: 18px;">
+                <p><strong>意味：</strong> 與...相反 / 對比...</p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+                
+                <p><strong><ruby>接続<rt>せつぞく</rt></ruby>：</strong> 名詞/普通形＋の ＋ に対して</p>
+                
+                <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <p>1. 学校の友達は<ruby>派手<rt>はで</rt></ruby>な<strong>のに対して</strong>、塾の友達は真面目だ。</p>
+                    <span class="cn-trans">相對於學校朋友很花俏，補習班朋友很認真。</span>
+                </div>
+
+                <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <p>2. 兄がスポーツ好きな<strong>のに対して</strong>、弟は読書が好きだ。</p>
+                    <span class="cn-trans">相對於哥哥喜歡運動，弟弟喜歡讀書。</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 2: Grammar 2 -->
+        <div class="slide">
+            <h2><i class="fa-solid fa-pen-nib"></i> 文法 2：～がち (傾向)</h2>
+            <div class="reading-box" style="font-size: 18px;">
+                <p><strong>意味：</strong> 容易... / 往往... (多用於負面或習慣)</p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+                
+                <p><strong><ruby>接続<rt>せつぞく</rt></ruby>：</strong> 動詞ます形(去ます) / 名詞 ＋ がち</p>
+                
+                <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <p>1. 最近、寝不足に<strong>なりがち</strong>だ。</p>
+                    <span class="cn-trans">最近往往容易睡眠不足。</span>
+                </div>
+
+                <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <p>2. 彼は学校を<strong>休みがち</strong>だ。</p>
+                    <span class="cn-trans">他經常請假沒去學校。</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 2: Roleplay 1 -->
+        <div class="slide">
+            <h2><i class="fa-brands fa-line" style="color: #06c755;"></i> ロールプレイ 1: 塾友への愚痴</h2>
+            <div class="two-column">
+                <div style="font-size: 18px;">
+                    <p><strong>状況：</strong> 学校で疲れたあなた。気の合う塾の友達（B）にLINEする。</p>
+                    <p><strong>目標：</strong> 学校と塾の違いを話す。</p>
+                    <p style="margin-top: 20px; color: var(--secondary);"><strong>ヒント：</strong></p>
+                    <ul>
+                        <li>気を使う (顧慮、費心)</li>
+                        <li>～に対して (相對地)</li>
+                    </ul>
+                </div>
+                
+                <div class="chat-container">
+                    <div class="chat-right-wrapper">
+                        <span class="chat-label">あなた (Student)</span>
+                        <div class="chat-bubble chat-right">
+                            あー、学校疲れた。<br>クラスのみんな、元気すぎてついていけない😩
+                        </div>
+                    </div>
+                    <div class="chat-left-wrapper">
+                        <span class="chat-label">塾友 B</span>
+                        <div class="chat-bubble chat-left">
+                            お疲れ（笑）<br>学校だと「明るいキャラ」演じてるんだっけ？
+                        </div>
+                    </div>
+                    <div class="chat-right-wrapper">
+                        <span class="chat-label">あなた (Student)</span>
+                        <div class="chat-bubble chat-right">
+                            そう。学校では無理してる<strong>のに対して</strong>、塾だと_____から楽なんだよね。
+                        </div>
+                    </div>
+                    <div class="chat-left-wrapper">
+                        <span class="chat-label">塾友 B</span>
+                        <div class="chat-bubble chat-left">
+                            わかるわ。ここなら本音で話せるもんね。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 2: Roleplay 2 -->
+        <div class="slide">
+            <h2><i class="fa-brands fa-line" style="color: #06c755;"></i> ロールプレイ 2: 学校の文化祭に誘う</h2>
+            <div class="two-column">
+                <div style="font-size: 18px;">
+                    <p><strong>状況：</strong> 学校の文化祭がある。塾の友達を誘う。</p>
+                    <p><strong>目標：</strong> 学校での自分のキャラについて前置きする。</p>
+                    <p style="margin-top: 20px; color: var(--secondary);"><strong>ヒント：</strong></p>
+                    <ul>
+                        <li>びっくりしないで (不要嚇到)</li>
+                        <li>全然違う (完全不同)</li>
+                    </ul>
+                </div>
+                
+                <div class="chat-container">
+                    <div class="chat-right-wrapper">
+                        <span class="chat-label">あなた (Student)</span>
+                        <div class="chat-bubble chat-right">
+                            今度の日曜、学校の文化祭があるんだけど、来ない？
+                        </div>
+                    </div>
+                    <div class="chat-left-wrapper">
+                        <span class="chat-label">塾友 B</span>
+                        <div class="chat-bubble chat-left">
+                            お、行く行く！<br>学校での○○さん、見てみたいな（笑）
+                        </div>
+                    </div>
+                    <div class="chat-right-wrapper">
+                        <span class="chat-label">あなた (Student)</span>
+                        <div class="chat-bubble chat-right">
+                            来てほしいけど、学校だとキャラが_____から、びっくりしないでね！
+                        </div>
+                    </div>
+                    <div class="chat-left-wrapper">
+                        <span class="chat-label">塾友 B</span>
+                        <div class="chat-bubble chat-left">
+                            逆に楽しみになってきたww
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 2: Roleplay 3 -->
+        <div class="slide">
+            <h2><i class="fa-brands fa-line" style="color: #06c755;"></i> ロールプレイ 3: オタク趣味全開</h2>
+            <div class="two-column">
+                <div style="font-size: 18px;">
+                    <p><strong>状況：</strong> 学校では言えない趣味の話を、塾の友達とする。</p>
+                    <p><strong>目標：</strong> 安心感を表現する。</p>
+                    <p style="margin-top: 20px; color: var(--secondary);"><strong>ヒント：</strong></p>
+                    <ul>
+                        <li>引かれる (被嚇退/令人反感)</li>
+                        <li>居心地がいい (舒適自在)</li>
+                    </ul>
+                </div>
+                
+                <div class="chat-container">
+                    <div class="chat-left-wrapper">
+                        <span class="chat-label">塾友 B</span>
+                        <div class="chat-bubble chat-left">
+                            昨日のアニメ見た！？<br>あのシーン、神回だったよね！
+                        </div>
+                    </div>
+                    <div class="chat-right-wrapper">
+                        <span class="chat-label">あなた (Student)</span>
+                        <div class="chat-bubble chat-right">
+                            見た見た！！最高だった！<br>学校でこの話をすると_____がちだから、言えないんだよね。
+                        </div>
+                    </div>
+                    <div class="chat-left-wrapper">
+                        <span class="chat-label">塾友 B</span>
+                        <div class="chat-bubble chat-left">
+                            学校の子は興味ないの？
+                        </div>
+                    </div>
+                    <div class="chat-right-wrapper">
+                        <span class="chat-label">あなた (Student)</span>
+                        <div class="chat-bubble chat-right">
+                            うん。だから、ここでは本音で話せて_____よ。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 2: Discussion -->
+        <div class="slide">
+            <h2><i class="fa-solid fa-comments"></i> ディスカッション</h2>
+            <div class="reading-box" style="height: auto;">
+                <p><strong>Q1. あなたは、付き合う友達によって自分の性格（キャラ）が変わりますか？</strong></p>
+                <span class="cn-trans">你會根據交往的朋友不同而改變自己的個性（角色）嗎？</span>
+                <button class="toggle-answer-btn" onclick="toggleAnswer(this)">回答例を表示</button>
+                <p class="sample-answer">例：はい、親の前では静かですが、友達の前ではうるさいです。</p>
+                <hr>
+                
+                <p><strong>Q2. 「本音（本当の気持ち）」と「建前（相手に合わせる顔）」、どちらが大切だと思いますか？</strong></p>
+                <span class="cn-trans">你覺得「真心話」和「場面話」哪一個比較重要？</span>
+                <button class="toggle-answer-btn" onclick="toggleAnswer(this)">回答例を表示</button>
+                <p class="sample-answer">例：社会では建前が必要ですが、ストレスがたまります。</p>
+            </div>
+        </div>
+
+
+        <!-- ================= THEME 3: 第二ボタン ================= -->
+        
+        <!-- Theme 3: Cover -->
+        <div class="slide">
+            <h2>テーマ 3：<ruby>卒業式<rt>そつぎょうしき</rt></ruby>、第二ボタンの文化</h2>
+            <div class="two-column">
+                <div>
+                    <p style="font-size: 22px; font-weight: bold; color: var(--primary);">「<ruby>甘酸<rt>あまず</rt></ruby>っぱい<ruby>青春<rt>せいしゅん</rt></ruby>のシンボル」</p>
+                    <span class="cn-trans">酸酸甜甜的青春象徵</span>
+                    
+                    <div style="margin-top: 20px; background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #eee;">
+                        <ul style="margin: 0; padding-left: 20px;">
+                            <li><strong>なぜ「第二」ボタンなのか？</strong><br><span class="cn-trans" style="font-size: 14px;">為什麼是「第二」顆鈕扣？</span></li>
+                            <li style="margin-top: 10px;"><strong>最近は「名札」や「スクバ」？</strong><br><span class="cn-trans" style="font-size: 14px;">最近流行「名牌」或「書包」？</span></li>
+                            <li style="margin-top: 10px;"><strong>告白のチャンス</strong><br><span class="cn-trans" style="font-size: 14px;">告白的機會</span></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="image-wrapper">
+                    <img src="https://images.unsplash.com/photo-1598556876374-123497b9115b?q=80&w=2070&auto=format&fit=crop" alt="School Uniform Button">
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 3: Reading -->
+        <div class="slide">
+            <h2><i class="fa-solid fa-book-open"></i> 文化補充：第二ボタンの伝説</h2>
+            <div class="two-column">
+                <div class="reading-box">
+                    <p>日本の卒業式の<ruby>定番<rt>ていばん</rt></ruby>といえば、「好きな人の第二ボタンをもらう」ことです。</p>
+                    <span class="cn-trans">說到日本畢業典禮的經典，就是「索取喜歡的人的第二顆鈕扣」。</span>
+
+                    <p>学生服（ガクラン）の第二ボタンは、「<ruby>心臓<rt>しんぞう</rt></ruby>（ハート）に一番近い場所」にあるため、それをもらうことは「相手の心をもらう」ことを意味すると言われています。</p>
+                    <span class="cn-trans">學生服的第二顆鈕扣位於「離心臟（心）最近的地方」，因此拿到它據說意味著「得到對方的心」。</span>
+
+                    <p>しかし、最近はブレザーの制服が増えたため、代わりに「<ruby>名札<rt>なふだ</rt></ruby>」や「ネクタイ」を交換することも多いそうです。</p>
+                    <span class="cn-trans">不過，最近西裝式制服增加了，據說改為交換「名牌」或「領帶」的情況也變多了。</span>
+                </div>
+                <div class="image-wrapper">
+                    <img src="https://images.unsplash.com/photo-1580829878235-9f5647568c00?q=80&w=2072&auto=format&fit=crop" alt="Heart Shape">
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 3: Vocab -->
+        <div class="slide">
+            <h2><i class="fa-solid fa-font"></i> 単語 (Vocabulary)</h2>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                <div class="grammar-item">
+                    <h3>1. <ruby>告白<rt>こくはく</rt></ruby> (する)</h3>
+                    <p>告白、表白</p>
+                    <span class="cn-trans">例文：卒業式に先輩に告白した。</span>
+                </div>
+                <div class="grammar-item">
+                    <h3>2. <ruby>記念<rt>きねん</rt></ruby></h3>
+                    <p>紀念</p>
+                    <span class="cn-trans">例文：卒業の記念に写真を撮る。</span>
+                </div>
+                <div class="grammar-item">
+                    <h3>3. <ruby>憧<rt>あこが</rt></ruby>れ</h3>
+                    <p>憧憬、仰慕的對象</p>
+                    <span class="cn-trans">例文：彼はみんなの憧れの先輩だ。</span>
+                </div>
+                <div class="grammar-item">
+                    <h3>4. <ruby>勇気<rt>ゆうき</rt></ruby></h3>
+                    <p>勇氣</p>
+                    <span class="cn-trans">例文：勇気を出して話しかけた。</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 3: Grammar 1 -->
+        <div class="slide">
+            <h2><i class="fa-solid fa-pen-nib"></i> 文法 1：～と言われている (伝聞)</h2>
+            <div class="reading-box" style="font-size: 18px;">
+                <p><strong>意味：</strong> 據說... / 人們都說... (一般常識或傳說)</p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+                
+                <p><strong><ruby>接続<rt>せつぞく</rt></ruby>：</strong> 普通形 ＋ と言われている</p>
+                
+                <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <p>1. 第二ボタンは心に近い場所にある<strong>と言われている</strong>。</p>
+                    <span class="cn-trans">據說第二顆鈕扣位於離心很近的地方。</span>
+                </div>
+
+                <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <p>2. この桜の木は、樹齢(じゅれい)100年だ<strong>と言われている</strong>。</p>
+                    <span class="cn-trans">這棵櫻花樹據說樹齡有100年了。</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 3: Grammar 2 -->
+        <div class="slide">
+            <h2><i class="fa-solid fa-pen-nib"></i> 文法 2：～てもらう (授受)</h2>
+            <div class="reading-box" style="font-size: 18px;">
+                <p><strong>意味：</strong> 請別人做某事 / 得到別人做某事的恩惠</p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+                
+                <p><strong><ruby>接続<rt>せつぞく</rt></ruby>：</strong> (人) に ＋ 動詞て形 ＋ もらう</p>
+                
+                <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <p>1. 私は先輩にボタンを<strong>もらいました</strong>。</p>
+                    <span class="cn-trans">我跟學長拿到了鈕扣（收到了學長給的鈕扣）。</span>
+                </div>
+
+                <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <p>2. 友達に写真を撮っ<strong>てもらった</strong>。</p>
+                    <span class="cn-trans">請朋友幫我拍了照。</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 3: Roleplay 1 -->
+        <div class="slide">
+            <h2><i class="fa-brands fa-line" style="color: #06c755;"></i> ロールプレイ 1: 卒業式後の報告</h2>
+            <div class="two-column">
+                <div style="font-size: 18px;">
+                    <p><strong>状況：</strong> 卒業式の夜、友達（C）とLINEで恋バナをする。</p>
+                    <p><strong>目標：</strong> ボタンをもらえたか話す。</p>
+                    <p style="margin-top: 20px; color: var(--secondary);"><strong>ヒント：</strong></p>
+                    <ul>
+                        <li>もらう (收到/拿)</li>
+                        <li>人気がある (受歡迎)</li>
+                    </ul>
+                </div>
+                
+                <div class="chat-container">
+                    <div class="chat-left-wrapper">
+                        <span class="chat-label">友達 C</span>
+                        <div class="chat-bubble chat-left">
+                            お疲れ！卒業式、どうだった？<br>誰かに告白した？😏
+                        </div>
+                    </div>
+                    <div class="chat-right-wrapper">
+                        <span class="chat-label">あなた (Student)</span>
+                        <div class="chat-bubble chat-right">
+                            実は…憧れの先輩に、第二ボタンを_____！
+                        </div>
+                    </div>
+                    <div class="chat-left-wrapper">
+                        <span class="chat-label">友達 C</span>
+                        <div class="chat-bubble chat-left">
+                            ええ！？すご！<br>あの先輩、超人気あると言われているのに！
+                        </div>
+                    </div>
+                    <div class="chat-right-wrapper">
+                        <span class="chat-label">あなた (Student)</span>
+                        <div class="chat-bubble chat-right">
+                            うん、勇気出してよかった！<br>一生の_____にするつもり。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 3: Roleplay 2 -->
+        <div class="slide">
+            <h2><i class="fa-brands fa-line" style="color: #06c755;"></i> ロールプレイ 2: 告白の作戦会議</h2>
+            <div class="two-column">
+                <div style="font-size: 18px;">
+                    <p><strong>状況：</strong> 卒業式の前日。先輩にボタンを貰いに行く相談。</p>
+                    <p><strong>目標：</strong> 勇気を出して行く決意をする。</p>
+                    <p style="margin-top: 20px; color: var(--secondary);"><strong>ヒント：</strong></p>
+                    <ul>
+                        <li>緊張する (緊張)</li>
+                        <li>後悔しないように (為了不後悔)</li>
+                    </ul>
+                </div>
+                
+                <div class="chat-container">
+                    <div class="chat-right-wrapper">
+                        <span class="chat-label">あなた (Student)</span>
+                        <div class="chat-bubble chat-right">
+                            明日、先輩にボタンくださいって言おうと思うんだけど…<br>めちゃくちゃ緊張する💦
+                        </div>
+                    </div>
+                    <div class="chat-left-wrapper">
+                        <span class="chat-label">友達 C</span>
+                        <div class="chat-bubble chat-left">
+                            頑張れ！<br>言わないで後悔するよりマシだよ！
+                        </div>
+                    </div>
+                    <div class="chat-right-wrapper">
+                        <span class="chat-label">あなた (Student)</span>
+                        <div class="chat-bubble chat-right">
+                            そうだよね。_____ように、頑張ってみる！
+                        </div>
+                    </div>
+                    <div class="chat-left-wrapper">
+                        <span class="chat-label">友達 C</span>
+                        <div class="chat-bubble chat-left">
+                            結果報告待ってるからね！👍
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 3: Roleplay 3 -->
+        <div class="slide">
+            <h2><i class="fa-brands fa-line" style="color: #06c755;"></i> ロールプレイ 3: 予想外の結果</h2>
+            <div class="two-column">
+                <div style="font-size: 18px;">
+                    <p><strong>状況：</strong> 先輩のところに行ったが、ボタンがなかった。</p>
+                    <p><strong>目標：</strong> 残念な結果を報告する。</p>
+                    <p style="margin-top: 20px; color: var(--secondary);"><strong>ヒント：</strong></p>
+                    <ul>
+                        <li>なくなっていた (沒了/不見了)</li>
+                        <li>代わりに (代替)</li>
+                    </ul>
+                </div>
+                
+                <div class="chat-container">
+                    <div class="chat-left-wrapper">
+                        <span class="chat-label">友達 C</span>
+                        <div class="chat-bubble chat-left">
+                            どうだった！？ボタンもらえた？
+                        </div>
+                    </div>
+                    <div class="chat-right-wrapper">
+                        <span class="chat-label">あなた (Student)</span>
+                        <div class="chat-bubble chat-right">
+                            ダメだった…😭<br>行った時には、もうボタンが全部_____。
+                        </div>
+                    </div>
+                    <div class="chat-left-wrapper">
+                        <span class="chat-label">友達 C</span>
+                        <div class="chat-bubble chat-left">
+                            嘘でしょ！？人気すぎ！<br>何ももらえなかったの？
+                        </div>
+                    </div>
+                    <div class="chat-right-wrapper">
+                        <span class="chat-label">あなた (Student)</span>
+                        <div class="chat-bubble chat-right">
+                            ううん、ボタンの代わりに_____をもらったよ！<br>これはこれで嬉しいかも💕
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme 3: Discussion -->
+        <div class="slide">
+            <h2><i class="fa-solid fa-comments"></i> ディスカッション</h2>
+            <div class="reading-box" style="height: auto;">
+                <p><strong>Q1. あなたの国の卒業式には、特別な習慣がありますか？</strong></p>
+                <span class="cn-trans">你的國家的畢業典禮有什麼特別的習慣嗎？</span>
+                <button class="toggle-answer-btn" onclick="toggleAnswer(this)">回答例を表示</button>
+                <p class="sample-answer">例：花束を渡す / 寄せ書き（サイン帳）を書く / 歌を歌う</p>
+                <hr>
+                
+                <p><strong>Q2. もし日本の高校生だったら、誰の第二ボタンが欲しいですか？</strong></p>
+                <span class="cn-trans">如果你是日本高中生，你會想要誰的第二顆鈕扣？</span>
+                <button class="toggle-answer-btn" onclick="toggleAnswer(this)">回答例を表示</button>
+                <p class="sample-answer">例：一番かっこいい人 / 優しくしてくれた先生 / ずっと仲良かった男友達</p>
+            </div>
+        </div>
+
+        <!-- Closing Slide -->
+        <div class="slide full-bg" style="background-image: url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop');">
+            <div class="overlay">
+                <h1>レッスン終了</h1>
+                <p>お<ruby>疲<rt>つか</rt></ruby>れ<ruby>様<rt>さま</rt></ruby>でした。</p>
+                <div class="reading-box" style="margin-top: 30px; text-align: left;">
+                    <div style="font-weight: bold; font-size: 24px; margin-bottom: 10px; color: var(--primary);">本日の宿題</div>
+                    <ul>
+                        <li>今日習った文法を使って、短い日記を書いてみましょう。<br>
+                        <span class="cn-trans">試著使用今天學到的文法寫一篇短日記。</span></li>
+                        <li>次のレッスンで、日記を読んでください。<br>
+                        <span class="cn-trans">下次上課時請朗讀日記。</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas Layers (Created Dynamically by JS) -->
+    </div>
+
+    <!-- Hidden Input for Image Upload -->
+    <input type="file" id="image-upload" accept="image/*" style="display: none;" onchange="handleImageUpload(this)">
+
+    <!-- Toolbar -->
+    <div id="toolbar">
+        <button class="tool-btn active" id="btn-move" onclick="setMode('move')" title="Move"><i class="fa-solid fa-up-down-left-right"></i></button>
+        <button class="tool-btn" id="btn-pen" onclick="setMode('pen')" title="Pen"><i class="fa-solid fa-pen"></i></button>
+        <button class="tool-btn" id="btn-eraser" onclick="setMode('eraser')" title="Eraser"><i class="fa-solid fa-eraser"></i></button>
+        <button class="tool-btn" id="btn-text" onclick="setMode('text')" title="Text"><i class="fa-solid fa-font"></i></button>
+        <button class="tool-btn" id="btn-image" onclick="triggerImageUpload()" title="Add Image"><i class="fa-solid fa-image"></i></button>
+        <div class="divider"></div>
+        <div id="color-palette"></div>
+        <div class="divider"></div>
+        <button class="tool-btn" onclick="exportPDF()" title="Save PDF"><i class="fa-solid fa-file-pdf"></i></button>
+    </div>
+
+    <script>
+        // --- 設定與初始化 ---
+        const colors = ['#8e24aa', '#d81b60', '#e53935', '#fb8c00', '#fdd835', '#43a047', '#1e88e5', '#3949ab', '#546e7a', '#000000'];
+        let currentMode = 'move';
+        let currentColor = colors[0];
+        let isDrawing = false;
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const presentationContainer = document.getElementById('presentation-container');
+
+        function init() {
+            // 生成調色盤
+            const palette = document.getElementById('color-palette');
+            colors.forEach((color, index) => {
+                const swatch = document.createElement('div');
+                swatch.className = `color-swatch ${index === 0 ? 'active' : ''}`;
+                swatch.style.backgroundColor = color;
+                swatch.onclick = () => selectColor(color, swatch);
+                palette.appendChild(swatch);
+            });
+
+            // 為每一頁新增 Canvas 和 Content Layer
+            slides.forEach((slide) => {
+                const canvas = document.createElement('canvas');
+                canvas.className = 'drawing-canvas';
+                canvas.width = 1280; canvas.height = 720;
+                slide.appendChild(canvas);
+                
+                const contentLayer = document.createElement('div');
+                contentLayer.className = 'content-layer';
+                slide.appendChild(contentLayer);
+
+                setupCanvasEvents(canvas);
+                slide.addEventListener('mousedown', (e) => handleSlideClick(e, contentLayer));
+            });
+
+            updateNavButtons();
+            setMode('move');
+        }
+
+        // --- 工具與模式 ---
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            const btn = document.getElementById(`btn-${mode}`);
+            if (btn) btn.classList.add('active');
+
+            const canvases = document.querySelectorAll('.drawing-canvas');
+            const contentLayers = document.querySelectorAll('.content-layer');
+            const draggables = document.querySelectorAll('.draggable-text, .draggable-image');
+            const chatContainers = document.querySelectorAll('.chat-container'); // Allow scrolling in chat
+
+            if (mode === 'pen' || mode === 'eraser') {
+                canvases.forEach(c => c.style.pointerEvents = 'auto');
+                contentLayers.forEach(l => l.style.pointerEvents = 'none');
+                draggables.forEach(d => {
+                     d.style.pointerEvents = 'none'; 
+                     if (d.classList.contains('draggable-text')) d.contentEditable = "false";
+                });
+                chatContainers.forEach(c => c.style.pointerEvents = 'none'); // Disable chat scroll when drawing
+                document.body.style.cursor = 'crosshair';
+                presentationContainer.style.userSelect = 'none';
+            } else if (mode === 'text') {
+                canvases.forEach(c => c.style.pointerEvents = 'none');
+                contentLayers.forEach(l => l.style.pointerEvents = 'none'); 
+                draggables.forEach(d => d.style.pointerEvents = 'auto');
+                chatContainers.forEach(c => c.style.pointerEvents = 'auto');
+                document.body.style.cursor = 'text';
+                presentationContainer.style.userSelect = 'none';
+            } else if (mode === 'move') {
+                canvases.forEach(c => c.style.pointerEvents = 'none');
+                contentLayers.forEach(l => l.style.pointerEvents = 'none');
+                draggables.forEach(d => {
+                    d.style.cursor = 'move';
+                    if (d.classList.contains('draggable-text')) d.contentEditable = "false";
+                    d.style.pointerEvents = 'auto';
+                });
+                chatContainers.forEach(c => c.style.pointerEvents = 'auto');
+                document.body.style.cursor = 'default';
+                presentationContainer.style.userSelect = 'text';
+            }
+        }
+
+        function selectColor(color, swatch) {
+            currentColor = color;
+            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+            swatch.classList.add('active');
+            if (document.activeElement && document.activeElement.classList.contains('draggable-text')) {
+                document.activeElement.style.color = color;
+                document.activeElement.style.borderColor = color;
+            }
+        }
+
+        // --- 繪圖功能 ---
+        function setupCanvasEvents(canvas) {
+            const ctx = canvas.getContext('2d');
+            canvas.addEventListener('mousedown', (e) => {
+                if (currentMode !== 'pen' && currentMode !== 'eraser') return;
+                isDrawing = true;
+                ctx.beginPath();
+                const rect = canvas.getBoundingClientRect();
+                ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+            });
+            canvas.addEventListener('mousemove', (e) => {
+                if (!isDrawing) return;
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                ctx.lineWidth = currentMode === 'eraser' ? 20 : 3;
+                ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                if (currentMode === 'eraser') { ctx.globalCompositeOperation = 'destination-out'; }
+                else { ctx.globalCompositeOperation = 'source-over'; ctx.strokeStyle = currentColor; }
+                ctx.lineTo(x, y); ctx.stroke();
+            });
+            canvas.addEventListener('mouseup', () => isDrawing = false);
+            canvas.addEventListener('mouseout', () => isDrawing = false);
+        }
+
+        // --- 文字功能 ---
+        function handleSlideClick(e, contentLayer) {
+            if (currentMode !== 'text') return;
+            if (e.target.classList.contains('draggable-text') || e.target.closest('.draggable-image') || e.target.closest('.chat-container')) return;
+            const rect = contentLayer.getBoundingClientRect();
+            createDraggableText(e.clientX - rect.left, e.clientY - rect.top, contentLayer);
+        }
+
+        function createDraggableText(x, y, container) {
+            const div = document.createElement('div');
+            div.className = 'draggable-text'; div.contentEditable = "true"; div.innerHTML = "Text";
+            div.style.left = `${x}px`; div.style.top = `${y}px`;
+            div.style.color = currentColor; div.style.borderColor = currentColor;
+            setupDraggable(div);
+            div.addEventListener('dblclick', () => { if(currentMode === 'eraser' || currentMode === 'move') div.remove(); });
+            container.appendChild(div);
+            setTimeout(() => { div.focus(); document.execCommand('selectAll', false, null); }, 0);
+        }
+
+        // --- 圖片功能 ---
+        function triggerImageUpload() { document.getElementById('image-upload').click(); }
+        function handleImageUpload(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const layer = slides[currentSlide].querySelector('.content-layer');
+                    createDraggableImage(e.target.result, 400, 200, layer);
+                };
+                reader.readAsDataURL(input.files[0]);
+                input.value = ''; 
+            }
+        }
+        function createDraggableImage(src, x, y, container) {
+            const div = document.createElement('div');
+            div.className = 'draggable-image'; div.style.left = `${x}px`; div.style.top = `${y}px`;
+            const img = document.createElement('img'); img.src = src; div.appendChild(img);
+            setupDraggable(div);
+            div.addEventListener('dblclick', () => { if(currentMode === 'eraser' || currentMode === 'move') div.remove(); });
+            container.appendChild(div);
+        }
+
+        // --- 拖曳邏輯 ---
+        function setupDraggable(element) {
+            let isDragging = false;
+            let startX, startY, initialLeft, initialTop;
+            element.addEventListener('mousedown', (e) => {
+                if (currentMode === 'move') {
+                    const rect = element.getBoundingClientRect();
+                    const isResizing = (e.clientX > rect.right - 20 && e.clientY > rect.bottom - 20);
+                    if (element.classList.contains('draggable-image') && isResizing) return;
+                    isDragging = true;
+                    startX = e.clientX; startY = e.clientY;
+                    initialLeft = element.offsetLeft; initialTop = element.offsetTop;
+                    element.style.cursor = 'grabbing'; e.stopPropagation();
+                } else if (currentMode === 'text' && element.classList.contains('draggable-text')) {
+                     element.contentEditable = "true"; element.focus();
+                }
+            });
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                element.style.left = `${initialLeft + (e.clientX - startX)}px`;
+                element.style.top = `${initialTop + (e.clientY - startY)}px`;
+            });
+            window.addEventListener('mouseup', () => { isDragging = false; if (currentMode === 'move') element.style.cursor = 'move'; });
+        }
+
+        // --- 導航 ---
+        function changeSlide(direction) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide += direction;
+            if (currentSlide < 0) currentSlide = 0;
+            if (currentSlide >= slides.length) currentSlide = slides.length - 1;
+            slides[currentSlide].classList.add('active');
+            updateNavButtons();
+        }
+        function updateNavButtons() {
+            document.getElementById('prev-btn').disabled = currentSlide === 0;
+            document.getElementById('next-btn').disabled = currentSlide === slides.length - 1;
+        }
+        function exportPDF() { window.print(); }
+        
+        // --- 顯示/隱藏回答 ---
+        function toggleAnswer(btn) {
+            const answer = btn.nextElementSibling;
+            if (answer.style.display === 'none' || answer.style.display === '') {
+                answer.style.display = 'block';
+                btn.textContent = '回答例を隠す';
+            } else {
+                answer.style.display = 'none';
+                btn.textContent = '回答例を表示';
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
